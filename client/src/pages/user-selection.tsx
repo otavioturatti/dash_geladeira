@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useBeverage } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,15 @@ import { LogIn } from "lucide-react";
 
 export default function UserSelection() {
   const [, setLocation] = useLocation();
-  const { users, loginUser } = useBeverage();
+  const { users, loginUser, currentUser } = useBeverage();
   const [selectedUserId, setSelectedUserId] = useState<string>("");
+
+  // Redirecionar automaticamente se já tiver usuário logado
+  useEffect(() => {
+    if (currentUser) {
+      setLocation(`/dashboard/${currentUser.id}`);
+    }
+  }, [currentUser, setLocation]);
 
   const handleLogin = () => {
     if (selectedUserId) {

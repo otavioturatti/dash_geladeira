@@ -56,6 +56,17 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Restaurar usuário do localStorage ao iniciar
+  useEffect(() => {
+    const savedUserId = localStorage.getItem("recria_current_user_id");
+    if (savedUserId && users.length > 0) {
+      const user = users.find(u => u.id === parseInt(savedUserId));
+      if (user) {
+        setCurrentUser(user);
+      }
+    }
+  }, [users]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -85,7 +96,10 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
 
   const loginUser = (userId: number) => {
     const user = users.find((u) => u.id === userId);
-    if (user) setCurrentUser(user);
+    if (user) {
+      setCurrentUser(user);
+      localStorage.setItem("recria_current_user_id", userId.toString());
+    }
   };
 
   const createUser = async (name: string) => {
@@ -103,7 +117,10 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logoutUser = () => setCurrentUser(null);
+  const logoutUser = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("recria_current_user_id");
+  };
 
   const loginAdmin = (password: string) => {
     if (password === "Recria123_Ai") {

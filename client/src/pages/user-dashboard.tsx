@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useBeverage } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Droplets, History, CheckCircle2, AlertCircle, Coffee, Wine, Beer, Milk, LucideIcon } from "lucide-react";
+import { Zap, Droplets, History, CheckCircle2, AlertCircle, Coffee, Wine, Beer, Milk, LucideIcon, LogOut } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -20,11 +20,17 @@ import {
 
 export default function UserDashboard() {
   const [, params] = useRoute("/dashboard/:userId");
-  const { users, products, recordTransaction, getUserBalance, getUserHistory, loginUser } = useBeverage();
+  const [, setLocation] = useLocation();
+  const { users, products, recordTransaction, getUserBalance, getUserHistory, loginUser, logoutUser } = useBeverage();
   const userId = params?.userId ? parseInt(params.userId) : undefined;
   const user = users.find((u) => u.id === userId);
   const [showConfetti, setShowConfetti] = useState<string | null>(null);
   const [confirmProduct, setConfirmProduct] = useState<{id: number, name: string} | null>(null);
+
+  const handleChangeUser = () => {
+    logoutUser();
+    setLocation("/");
+  };
 
   // Restore session if needed (simple check)
   useEffect(() => {
@@ -75,7 +81,13 @@ export default function UserDashboard() {
     <div className="space-y-8 pb-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold">Olá, <span className="text-primary">{user.name}</span></h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-display font-bold">Olá, <span className="text-primary">{user.name}</span></h1>
+            <Button variant="ghost" size="sm" onClick={handleChangeUser} className="text-muted-foreground hover:text-foreground">
+              <LogOut className="w-4 h-4 mr-1" />
+              Trocar
+            </Button>
+          </div>
           <p className="text-muted-foreground">O que vamos beber hoje?</p>
         </div>
         <Card className="bg-card/40 border-primary/20 backdrop-blur-md w-full md:w-auto min-w-[200px]">
