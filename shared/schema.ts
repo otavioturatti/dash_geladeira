@@ -13,6 +13,7 @@ export const products = pgTable("products", {
   price: real("price").notNull(),
   type: text("type").notNull().default("other"),
   icon: text("icon"),
+  borderColor: text("border_color"),
 });
 
 export const transactions = pgTable("transactions", {

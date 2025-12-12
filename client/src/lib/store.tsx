@@ -11,6 +11,7 @@ export type Product = {
   price: number;
   type: "monster" | "coke" | "other";
   icon?: string;
+  borderColor?: string;
 };
 
 export type Transaction = {
@@ -105,7 +106,7 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
   const logoutUser = () => setCurrentUser(null);
 
   const loginAdmin = (password: string) => {
-    if (password === "admin123") {
+    if (password === "Recria123_Ai") {
       setIsAdmin(true);
       return true;
     }

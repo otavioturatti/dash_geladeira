@@ -82,8 +82,14 @@ app.use((req, res, next) => {
         name TEXT NOT NULL,
         price REAL NOT NULL,
         type TEXT NOT NULL DEFAULT 'other',
-        icon TEXT
+        icon TEXT,
+        border_color TEXT
       )
+    `);
+
+    // Adicionar coluna border_color se não existir
+    await db.execute(sql`
+      ALTER TABLE products ADD COLUMN IF NOT EXISTS border_color TEXT
     `);
     
     // Criar tabela transactions

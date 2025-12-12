@@ -20,7 +20,7 @@ export default function AdminDashboard() {
     getUserBalance, clearUserTransactions, createUser
   } = useBeverage();
 
-  const [newProduct, setNewProduct] = useState({ name: "", price: "", type: "other" as const, icon: "Coffee" });
+  const [newProduct, setNewProduct] = useState({ name: "", price: "", type: "other" as const, icon: "Coffee", borderColor: "#22c55e" });
   const [newUserName, setNewUserName] = useState("");
 
   const availableIcons = [
@@ -79,9 +79,10 @@ export default function AdminDashboard() {
         name: newProduct.name,
         price: parseFloat(newProduct.price),
         type: newProduct.type,
-        icon: newProduct.icon
+        icon: newProduct.icon,
+        borderColor: newProduct.borderColor
       });
-      setNewProduct({ name: "", price: "", type: "other", icon: "Coffee" });
+      setNewProduct({ name: "", price: "", type: "other", icon: "Coffee", borderColor: "#22c55e" });
     }
   };
 
@@ -302,8 +303,8 @@ export default function AdminDashboard() {
                     </div>
                     <div className="w-40 space-y-2">
                       <Label>Ícone</Label>
-                      <Select 
-                        value={newProduct.icon} 
+                      <Select
+                        value={newProduct.icon}
                         onValueChange={(val) => setNewProduct({...newProduct, icon: val})}
                       >
                         <SelectTrigger>
@@ -320,6 +321,17 @@ export default function AdminDashboard() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Cor da Borda</Label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={newProduct.borderColor}
+                          onChange={(e) => setNewProduct({...newProduct, borderColor: e.target.value})}
+                          className="w-12 h-10 rounded cursor-pointer border border-border"
+                        />
+                      </div>
                     </div>
                     <Button type="submit">
                       <Plus className="w-4 h-4 mr-2" /> Adicionar
