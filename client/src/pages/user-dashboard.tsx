@@ -33,6 +33,15 @@ export default function UserDashboard() {
 
   if (!user) return <div className="p-8 text-center">Usuário não encontrado.</div>;
 
+  if (products.length === 0) {
+    return (
+      <div className="p-8 text-center space-y-4">
+        <h2 className="text-xl font-bold">Nenhum produto cadastrado</h2>
+        <p className="text-muted-foreground">Entre no painel administrativo para cadastrar produtos.</p>
+      </div>
+    );
+  }
+
   const handleConfirmPurchase = async () => {
     if (userId === undefined || !confirmProduct) return;
     
@@ -50,8 +59,8 @@ export default function UserDashboard() {
   const history = getUserHistory(user.id);
 
   const monsterProduct = products.find(p => p.type === "monster") || products[0];
-  const cokeProduct = products.find(p => p.type === "coke") || products[1];
-  const otherProducts = products.filter(p => p.type !== "monster" && p.type !== "coke");
+  const cokeProduct = products.find(p => p.type === "coke") || products[1] || products[0];
+  const otherProducts = products.filter(p => p.id !== monsterProduct?.id && p.id !== cokeProduct?.id);
 
   const iconMap: Record<string, LucideIcon> = {
     "Zap": Zap,
