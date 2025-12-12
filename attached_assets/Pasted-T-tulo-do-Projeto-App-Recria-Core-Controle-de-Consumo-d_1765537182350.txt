@@ -1,0 +1,36 @@
+Título do Projeto: App "Recria Core" - Controle de Consumo de Bebidas
+Objetivo Principal: Criar um aplicativo web simples, acessado via QR Code, para que os funcionários da empresa possam registrar o consumo de bebidas (Monster e Coca-Cola Zero) de uma geladeira compartilhada. O pagamento é consolidado e realizado apenas no dia 5 do mês seguinte.
+Recursos e Funcionalidades:
+1. Tela do Usuário (Funcionário):
+Acesso Simplificado: Ao escanear o QR Code, o usuário é levado para uma página inicial simples.
+Identificação do Usuário: O sistema deve permitir que o usuário se identifique. A primeira vez que acessar, ele cria um perfil simples (apenas nome). Nas vezes seguintes, ele pode selecionar seu nome de uma lista.
+Ação Principal: A tela deve ter dois botões grandes e claros:
+"Peguei um Monster"
+"Peguei uma Coca Zero"
+Confirmação: Após clicar em um dos botões, o sistema deve exibir uma mensagem de confirmação como: "Registrado! Você pegou um(a) [Nome da Bebida] em [Data] às [Hora]."
+Visualização de Débito: Na mesma tela, o usuário deve conseguir ver:
+"Seu saldo devedor atual: R$ [Valor Total]"
+Um histórico simples de seus consumos no mês corrente (ex: "3 Monsters, 2 Cocas Zero").
+2. Painel do Administrador (Visão do "Dono" da Geladeira):
+Acesso Seguro: O administrador deve ter uma forma de login separada (pode ser com uma senha simples).
+Gestão de Produtos:
+O admin deve poder ver, adicionar ou remover produtos (ex: adicionar "Red Bull").
+O mais importante: O admin precisa de um campo para editar o preço de cada item a qualquer momento. O preço padrão do Monster é R$ 7,00.
+Visualização Geral: O painel deve mostrar o total de bebidas consumidas no mês e o valor total a ser recebido.
+Relatórios e Gráficos (Dashboard):
+Ranking de Consumo: Um gráfico de barras ou lista mostrando "Quem está bebendo mais este mês?" (Nome do funcionário vs. quantidade total de bebidas).
+Pico de Consumo: Um gráfico mostrando os horários em que as pessoas mais pegam bebidas (ex: um gráfico de linha com as horas do dia no eixo X e a quantidade no eixo Y).
+Preferência de Bebida: Um gráfico de pizza mostrando a proporção de consumo entre Monster e Coca Zero (e outros itens).
+Gestão de Pagamentos:
+O admin precisa de um botão "Zerar Dívidas do Mês" ou "Iniciar Novo Ciclo". Ao ser clicado, ele arquiva os registros do mês que passou e zera o saldo devedor de todos para o novo mês. Isso deve ser feito após o pagamento no dia 5.
+Estrutura Técnica e de Dados:
+Tabela de Usuários: id_usuario, nome.
+Tabela de Produtos: id_produto, nome_produto, preco_atual.
+Tabela de Registros: id_registro, id_usuario (quem pegou), id_produto (o que pegou), timestamp (data e hora), preco_no_momento_do_registro.
+Exemplo de Fluxo do Usuário:
+Ana escaneia o QR Code na geladeira.
+Abre o app no navegador do celular.
+Ela vê uma lista de nomes e seleciona "Ana".
+A tela seguinte mostra: "Olá, Ana! Seu saldo devedor é R$ 14,00." e dois botões.
+Ana clica em "Peguei um Monster".
+O sistema registra a ação e a tela atualiza: "Registrado! Seu saldo devedor agora é R$ 21,00."
