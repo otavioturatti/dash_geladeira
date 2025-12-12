@@ -5,23 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, 
-  PieChart, Pie, LineChart, Line 
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, LineChart, Line
 } from "recharts";
-import { AlertTriangle, Trash2, Plus, DollarSign, Users, Package, CheckCircle, Coffee, Zap, Droplets, Wine, Beer, Milk } from "lucide-react";
+import { AlertTriangle, Trash2, Plus, DollarSign, Users, Package, CheckCircle, Coffee, Zap, Droplets, Wine, Beer, Milk, UserPlus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function AdminDashboard() {
-  const { 
-    products, transactions, users, 
+  const {
+    products, transactions, users,
     addProduct, removeProduct, updateProductPrice, resetMonth,
-    getUserBalance, clearUserTransactions
+    getUserBalance, clearUserTransactions, createUser
   } = useBeverage();
 
   const [newProduct, setNewProduct] = useState({ name: "", price: "", type: "other" as const, icon: "Coffee" });
-  
+  const [newUserName, setNewUserName] = useState("");
+
   const availableIcons = [
     { value: "Coffee", label: "Café", icon: Coffee },
     { value: "Zap", label: "Energético", icon: Zap },
@@ -81,6 +82,14 @@ export default function AdminDashboard() {
         icon: newProduct.icon
       });
       setNewProduct({ name: "", price: "", type: "other", icon: "Coffee" });
+    }
+  };
+
+  const handleAddUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newUserName.trim()) {
+      createUser(newUserName.trim());
+      setNewUserName("");
     }
   };
 
@@ -322,7 +331,42 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="users" className="mt-4">
+        <TabsContent value="users" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Adicionar Membro</CardTitle>
+              <CardDescription>Cadastre novos membros no sistema.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleAddUser} className="flex gap-4 items-end">
+                <div className="flex-1 space-y-2">
+                  <Label>Nome do Membro</Label>
+                  <Input
+                    placeholder="Ex: João Silva"
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                  />
+                </div>
+                <Button type="submit" disabled={!newUserName.trim()}>
+                  <UserPlus className="w-4 h-4 mr-2" /> Adicionar
+                </Button>
+              </form>
+
+              {users.length > 0 && (
+                <div className="mt-6 border-t pt-4">
+                  <h4 className="text-sm font-medium mb-3">Membros cadastrados ({users.length})</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {users.map(user => (
+                      <span key={user.id} className="px-3 py-1 bg-muted rounded-full text-sm">
+                        {user.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Relatório de Dívidas</CardTitle>
