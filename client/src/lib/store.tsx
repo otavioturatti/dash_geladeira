@@ -47,7 +47,7 @@ interface BeverageContextType {
   updateUser: (userId: number, name: string) => Promise<void>;
   deleteUser: (userId: number) => Promise<void>;
   logoutUser: () => void;
-  loginAdmin: (password: string) => boolean;
+  loginAdmin: (password: string) => Promise<boolean>;
   logoutAdmin: () => void;
   addProduct: (product: Omit<Product, "id">) => Promise<void>;
   updateProduct: (productId: number, data: Partial<Omit<Product, "id">>) => Promise<void>;
@@ -171,12 +171,24 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("recria_current_user_id");
   };
 
-  const loginAdmin = (password: string) => {
-    if (password === "Recria123_Ai") {
-      setIsAdmin(true);
-      return true;
+  const loginAdmin = async (password: string) => {
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setIsAdmin(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error logging in as admin:", error);
+      return false;
     }
-    return false;
   };
 
   const logoutAdmin = () => setIsAdmin(false);

@@ -13,9 +13,10 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginAdmin(password)) {
+    const success = await loginAdmin(password);
+    if (success) {
       setLocation("/admin/dashboard");
     } else {
       setError(true);

@@ -151,6 +151,18 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
+  // Admin authentication
+  app.post("/api/admin/login", async (req, res) => {
+    const { password } = req.body;
+    const adminPassword = process.env.ADMIN_PASSWORD || "Recria123_Ai";
+
+    if (password === adminPassword) {
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ success: false, message: "Invalid password" });
+    }
+  });
+
   // Purchase History (histórico permanente)
   app.get("/api/history", async (_req, res) => {
     const history = await storage.getPurchaseHistory();
