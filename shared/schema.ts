@@ -25,12 +25,27 @@ export const transactions = pgTable("transactions", {
   timestamp: timestamp("timestamp").notNull().defaultNow(),
 });
 
+// Histórico permanente de todas as compras (não afeta saldo devedor)
+export const purchaseHistory = pgTable("purchase_history", {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id").notNull(),
+  userName: text("user_name").notNull(),
+  productName: text("product_name").notNull(),
+  price: real("price").notNull(),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+  month: text("month").notNull(), // formato: "2025-01"
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
-export const insertTransactionSchema = createInsertSchema(transactions).omit({ 
-  id: true, 
-  timestamp: true 
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
+  timestamp: true
+});
+export const insertPurchaseHistorySchema = createInsertSchema(purchaseHistory).omit({
+  id: true,
+  timestamp: true
 });
 
 // Types
@@ -42,3 +57,6 @@ export type Product = typeof products.$inferSelect;
 
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type Transaction = typeof transactions.$inferSelect;
+
+export type InsertPurchaseHistory = z.infer<typeof insertPurchaseHistorySchema>;
+export type PurchaseHistory = typeof purchaseHistory.$inferSelect;

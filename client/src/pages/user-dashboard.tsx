@@ -4,7 +4,8 @@ import { useBeverage } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Droplets, History, CheckCircle2, AlertCircle, Coffee, Wine, Beer, Milk, LucideIcon, LogOut } from "lucide-react";
+import { Zap, Droplets, History, CheckCircle2, AlertCircle, Coffee, Wine, Beer, Milk, LucideIcon, LogOut, Calendar } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -21,7 +22,7 @@ import {
 export default function UserDashboard() {
   const [, params] = useRoute("/dashboard/:userId");
   const [, setLocation] = useLocation();
-  const { users, products, recordTransaction, getUserBalance, getUserHistory, loginUser, logoutUser } = useBeverage();
+  const { users, products, recordTransaction, getUserBalance, getUserHistory, loginUser, logoutUser, getUserPurchaseHistory, availableMonths } = useBeverage();
   const userId = params?.userId ? parseInt(params.userId) : undefined;
   const user = users.find((u) => u.id === userId);
   const [showConfetti, setShowConfetti] = useState<string | null>(null);
@@ -63,6 +64,7 @@ export default function UserDashboard() {
 
   const balance = getUserBalance(user.id);
   const history = getUserHistory(user.id);
+  const fullHistory = getUserPurchaseHistory(user.id);
 
   const monsterProduct = products.find(p => p.type === "monster") || products[0];
   const cokeProduct = products.find(p => p.type === "coke") || products[1] || products[0];
@@ -197,27 +199,56 @@ export default function UserDashboard() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <History className="w-5 h-5 text-primary" />
-            Histórico do Mês
+            Meu Histórico
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {history.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nenhum consumo registrado este mês.</p>
-          ) : (
-            <div className="space-y-4">
-              {history.map((t) => (
-                <div key={t.id} className="flex justify-between items-center border-b border-border/50 pb-2 last:border-0 last:pb-0">
-                  <div className="flex flex-col">
-                    <span className="font-medium">{t.productName}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(t.timestamp), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                    </span>
-                  </div>
-                  <span className="font-mono text-sm">R$ {t.price.toFixed(2).replace('.', ',')}</span>
+          <Tabs defaultValue="current">
+            <TabsList className="mb-4">
+              <TabsTrigger value="current">Saldo Atual</TabsTrigger>
+              <TabsTrigger value="all">Histórico Completo</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="current">
+              {history.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Nenhum consumo registrado este mês.</p>
+              ) : (
+                <div className="space-y-4">
+                  {history.map((t) => (
+                    <div key={t.id} className="flex justify-between items-center border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{t.productName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(t.timestamp), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                      <span className="font-mono text-sm">R$ {t.price.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
+            </TabsContent>
+
+            <TabsContent value="all">
+              {fullHistory.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Nenhum histórico de compras.</p>
+              ) : (
+                <div className="space-y-4">
+                  {fullHistory.map((h) => (
+                    <div key={h.id} className="flex justify-between items-center border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{h.productName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(h.timestamp), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                      <span className="font-mono text-sm">R$ {h.price.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
     </div>

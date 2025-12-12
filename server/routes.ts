@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertProductSchema, insertTransactionSchema } from "@shared/schema";
+import { insertUserSchema, insertProductSchema, insertTransactionSchema, insertPurchaseHistorySchema } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -110,6 +110,29 @@ export async function registerRoutes(
   app.delete("/api/transactions", async (_req, res) => {
     await storage.deleteAllTransactions();
     res.status(204).send();
+  });
+
+  // Purchase History (histórico permanente)
+  app.get("/api/history", async (_req, res) => {
+    const history = await storage.getPurchaseHistory();
+    res.json(history);
+  });
+
+  app.get("/api/history/user/:userId", async (req, res) => {
+    const userId = parseInt(req.params.userId);
+    const history = await storage.getUserPurchaseHistory(userId);
+    res.json(history);
+  });
+
+  app.get("/api/history/months", async (_req, res) => {
+    const months = await storage.getAvailableMonths();
+    res.json(months);
+  });
+
+  app.get("/api/history/month/:month", async (req, res) => {
+    const month = req.params.month;
+    const history = await storage.getPurchaseHistoryByMonth(month);
+    res.json(history);
   });
 
   return httpServer;

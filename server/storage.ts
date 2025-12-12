@@ -1,11 +1,12 @@
 import { db } from "./db";
-import { users, products, transactions } from "@shared/schema";
-import type { 
+import { users, products, transactions, purchaseHistory } from "@shared/schema";
+import type {
   User, InsertUser,
   Product, InsertProduct,
-  Transaction, InsertTransaction
+  Transaction, InsertTransaction,
+  PurchaseHistory, InsertPurchaseHistory
 } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -26,6 +27,13 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   deleteUserTransactions(userId: number): Promise<void>;
   deleteAllTransactions(): Promise<void>;
+
+  // Purchase History
+  getPurchaseHistory(): Promise<PurchaseHistory[]>;
+  getUserPurchaseHistory(userId: number): Promise<PurchaseHistory[]>;
+  createPurchaseHistory(history: InsertPurchaseHistory): Promise<PurchaseHistory>;
+  getAvailableMonths(): Promise<string[]>;
+  getPurchaseHistoryByMonth(month: string): Promise<PurchaseHistory[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -83,7 +91,21 @@ export class DatabaseStorage implements IStorage {
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
     const result = await db.insert(transactions).values(insertTransaction).returning();
-    return result[0];
+    const transaction = result[0];
+
+    // Salvar também no histórico permanente
+    const user = await this.getUser(insertTransaction.userId);
+    const currentMonth = new Date().toISOString().slice(0, 7); // "2025-01"
+
+    await this.createPurchaseHistory({
+      userId: insertTransaction.userId,
+      userName: user?.name || "Desconhecido",
+      productName: insertTransaction.productName,
+      price: insertTransaction.price,
+      month: currentMonth
+    });
+
+    return transaction;
   }
 
   async deleteUserTransactions(userId: number): Promise<void> {
@@ -92,6 +114,40 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAllTransactions(): Promise<void> {
     await db.delete(transactions);
+  }
+
+  // Purchase History
+  async getPurchaseHistory(): Promise<PurchaseHistory[]> {
+    return await db.select().from(purchaseHistory).orderBy(desc(purchaseHistory.timestamp));
+  }
+
+  async getUserPurchaseHistory(userId: number): Promise<PurchaseHistory[]> {
+    return await db
+      .select()
+      .from(purchaseHistory)
+      .where(eq(purchaseHistory.userId, userId))
+      .orderBy(desc(purchaseHistory.timestamp));
+  }
+
+  async createPurchaseHistory(insertHistory: InsertPurchaseHistory): Promise<PurchaseHistory> {
+    const result = await db.insert(purchaseHistory).values(insertHistory).returning();
+    return result[0];
+  }
+
+  async getAvailableMonths(): Promise<string[]> {
+    const result = await db
+      .selectDistinct({ month: purchaseHistory.month })
+      .from(purchaseHistory)
+      .orderBy(desc(purchaseHistory.month));
+    return result.map(r => r.month);
+  }
+
+  async getPurchaseHistoryByMonth(month: string): Promise<PurchaseHistory[]> {
+    return await db
+      .select()
+      .from(purchaseHistory)
+      .where(eq(purchaseHistory.month, month))
+      .orderBy(desc(purchaseHistory.timestamp));
   }
 }
 

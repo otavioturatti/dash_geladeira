@@ -103,6 +103,19 @@ app.use((req, res, next) => {
         timestamp TIMESTAMP NOT NULL DEFAULT NOW()
       )
     `);
+
+    // Criar tabela purchase_history (histórico permanente)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS purchase_history (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        user_name TEXT NOT NULL,
+        product_name TEXT NOT NULL,
+        price REAL NOT NULL,
+        timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+        month TEXT NOT NULL
+      )
+    `);
     
     log("Database tables created successfully");
   } catch (error) {

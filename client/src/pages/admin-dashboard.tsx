@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { useBeverage } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -9,7 +11,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, LineChart, Line
 } from "recharts";
-import { AlertTriangle, Trash2, Plus, DollarSign, Users, Package, CheckCircle, Coffee, Zap, Droplets, Wine, Beer, Milk, UserPlus } from "lucide-react";
+import { AlertTriangle, Trash2, Plus, DollarSign, Users, Package, CheckCircle, Coffee, Zap, Droplets, Wine, Beer, Milk, UserPlus, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -17,11 +19,13 @@ export default function AdminDashboard() {
   const {
     products, transactions, users,
     addProduct, removeProduct, updateProductPrice, resetMonth,
-    getUserBalance, clearUserTransactions, createUser
+    getUserBalance, clearUserTransactions, createUser,
+    purchaseHistory, availableMonths, getPurchaseHistoryByMonth
   } = useBeverage();
 
   const [newProduct, setNewProduct] = useState({ name: "", price: "", type: "other" as const, icon: "Coffee", borderColor: "#22c55e" });
   const [newUserName, setNewUserName] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
 
   const availableIcons = [
     { value: "Coffee", label: "Café", icon: Coffee },
@@ -94,6 +98,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const formatMonthLabel = (month: string) => {
+    const [year, monthNum] = month.split("-");
+    const date = new Date(parseInt(year), parseInt(monthNum) - 1);
+    return format(date, "MMMM 'de' yyyy", { locale: ptBR });
+  };
+
+  const filteredHistory = useMemo(() => {
+    if (!selectedMonth) return purchaseHistory;
+    return getPurchaseHistoryByMonth(selectedMonth);
+  }, [selectedMonth, purchaseHistory, getPurchaseHistoryByMonth]);
+
+  const historyTotalByUser = useMemo(() => {
+    const totals: Record<string, { name: string; total: number; count: number }> = {};
+    filteredHistory.forEach(h => {
+      if (!totals[h.userId]) {
+        totals[h.userId] = { name: h.userName, total: 0, count: 0 };
+      }
+      totals[h.userId].total += h.price;
+      totals[h.userId].count += 1;
+    });
+    return Object.values(totals).sort((a, b) => b.total - a.total);
+  }, [filteredHistory]);
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -163,6 +190,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="products">Produtos</TabsTrigger>
           <TabsTrigger value="users">Usuários e Dívidas</TabsTrigger>
+          <TabsTrigger value="history">Histórico</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-4 mt-4">
@@ -424,6 +452,83 @@ export default function AdminDashboard() {
                    <div className="text-center text-muted-foreground py-8">Nenhuma dívida pendente.</div>
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Histórico de Compras
+              </CardTitle>
+              <CardDescription>Todas as compras registradas (não afeta saldo devedor)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6">
+                <Label className="mb-2 block">Filtrar por mês</Label>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Todos os meses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos os meses</SelectItem>
+                    {availableMonths.map(month => (
+                      <SelectItem key={month} value={month}>
+                        {formatMonthLabel(month)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {historyTotalByUser.length > 0 && (
+                <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium mb-3">Resumo por Usuário</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {historyTotalByUser.map((u, i) => (
+                      <div key={i} className="flex justify-between items-center p-2 bg-background rounded">
+                        <span className="font-medium">{u.name}</span>
+                        <div className="text-right">
+                          <span className="font-mono text-primary">R$ {u.total.toFixed(2)}</span>
+                          <span className="text-xs text-muted-foreground ml-2">({u.count} itens)</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 pt-3 border-t flex justify-between">
+                    <span className="font-bold">Total Geral</span>
+                    <span className="font-mono font-bold text-primary">
+                      R$ {filteredHistory.reduce((sum, h) => sum + h.price, 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {filteredHistory.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">Nenhum histórico de compras.</div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {filteredHistory.slice(0, 100).map((h) => (
+                    <div key={h.id} className="flex justify-between items-center p-3 border-b last:border-0">
+                      <div className="flex flex-col">
+                        <span className="font-medium">{h.userName}</span>
+                        <span className="text-sm text-muted-foreground">{h.productName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(h.timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </span>
+                      </div>
+                      <span className="font-mono">R$ {h.price.toFixed(2)}</span>
+                    </div>
+                  ))}
+                  {filteredHistory.length > 100 && (
+                    <p className="text-center text-muted-foreground text-sm py-2">
+                      Mostrando 100 de {filteredHistory.length} registros
+                    </p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -23,10 +23,22 @@ export type Transaction = {
   price: number;
 };
 
+export type PurchaseHistory = {
+  id: number;
+  userId: number;
+  userName: string;
+  productName: string;
+  price: number;
+  timestamp: string;
+  month: string;
+};
+
 interface BeverageContextType {
   users: User[];
   products: Product[];
   transactions: Transaction[];
+  purchaseHistory: PurchaseHistory[];
+  availableMonths: string[];
   currentUser: User | null;
   isAdmin: boolean;
   loading: boolean;
@@ -43,6 +55,8 @@ interface BeverageContextType {
   clearUserTransactions: (userId: number) => Promise<void>;
   getUserBalance: (userId: number) => number;
   getUserHistory: (userId: number) => Transaction[];
+  getUserPurchaseHistory: (userId: number) => PurchaseHistory[];
+  getPurchaseHistoryByMonth: (month: string) => PurchaseHistory[];
   refreshData: () => Promise<void>;
 }
 
@@ -52,6 +66,8 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [purchaseHistory, setPurchaseHistory] = useState<PurchaseHistory[]>([]);
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -70,19 +86,25 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [usersRes, productsRes, transactionsRes] = await Promise.all([
+      const [usersRes, productsRes, transactionsRes, historyRes, monthsRes] = await Promise.all([
         fetch("/api/users"),
         fetch("/api/products"),
         fetch("/api/transactions"),
+        fetch("/api/history"),
+        fetch("/api/history/months"),
       ]);
 
       const usersData = await usersRes.json();
       const productsData = await productsRes.json();
       const transactionsData = await transactionsRes.json();
+      const historyData = await historyRes.json();
+      const monthsData = await monthsRes.json();
 
       setUsers(usersData);
       setProducts(productsData);
       setTransactions(transactionsData);
+      setPurchaseHistory(historyData);
+      setAvailableMonths(monthsData);
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
@@ -227,12 +249,26 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   };
 
+  const getUserPurchaseHistory = (userId: number) => {
+    return purchaseHistory
+      .filter((h) => h.userId === userId)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  };
+
+  const getPurchaseHistoryByMonth = (month: string) => {
+    return purchaseHistory
+      .filter((h) => h.month === month)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  };
+
   return (
     <BeverageContext.Provider
       value={{
         users,
         products,
         transactions,
+        purchaseHistory,
+        availableMonths,
         currentUser,
         isAdmin,
         loading,
@@ -249,6 +285,8 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
         clearUserTransactions,
         getUserBalance,
         getUserHistory,
+        getUserPurchaseHistory,
+        getPurchaseHistoryByMonth,
         refreshData: fetchData,
       }}
     >
