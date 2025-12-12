@@ -13,11 +13,14 @@ export interface IStorage {
   getUsers(): Promise<User[]>;
   getUser(id: number): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, name: string): Promise<User | undefined>;
+  deleteUser(id: number): Promise<void>;
 
   // Products
   getProducts(): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: number, data: Partial<InsertProduct>): Promise<Product | undefined>;
   updateProductPrice(id: number, price: number): Promise<Product | undefined>;
   deleteProduct(id: number): Promise<void>;
 
@@ -52,6 +55,19 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async updateUser(id: number, name: string): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ name })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
   // Products
   async getProducts(): Promise<Product[]> {
     return await db.select().from(products);
@@ -64,6 +80,15 @@ export class DatabaseStorage implements IStorage {
 
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     const result = await db.insert(products).values(insertProduct).returning();
+    return result[0];
+  }
+
+  async updateProduct(id: number, data: Partial<InsertProduct>): Promise<Product | undefined> {
+    const result = await db
+      .update(products)
+      .set(data)
+      .where(eq(products.id, id))
+      .returning();
     return result[0];
   }
 

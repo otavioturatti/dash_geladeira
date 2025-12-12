@@ -33,6 +33,27 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/users/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { name } = req.body;
+
+    if (typeof name !== "string" || !name.trim()) {
+      return res.status(400).json({ message: "Invalid name" });
+    }
+
+    const user = await storage.updateUser(id, name.trim());
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    await storage.deleteUser(id);
+    res.status(204).send();
+  });
+
   // Products
   app.get("/api/products", async (_req, res) => {
     const products = await storage.getProducts();
@@ -61,12 +82,30 @@ export async function registerRoutes(
   app.patch("/api/products/:id/price", async (req, res) => {
     const id = parseInt(req.params.id);
     const { price } = req.body;
-    
+
     if (typeof price !== "number") {
       return res.status(400).json({ message: "Invalid price" });
     }
 
     const product = await storage.updateProductPrice(id, price);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.json(product);
+  });
+
+  app.patch("/api/products/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { name, price, type, icon, borderColor } = req.body;
+
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name;
+    if (price !== undefined) updateData.price = price;
+    if (type !== undefined) updateData.type = type;
+    if (icon !== undefined) updateData.icon = icon;
+    if (borderColor !== undefined) updateData.borderColor = borderColor;
+
+    const product = await storage.updateProduct(id, updateData);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }

@@ -44,10 +44,13 @@ interface BeverageContextType {
   loading: boolean;
   loginUser: (userId: number) => void;
   createUser: (name: string) => Promise<void>;
+  updateUser: (userId: number, name: string) => Promise<void>;
+  deleteUser: (userId: number) => Promise<void>;
   logoutUser: () => void;
   loginAdmin: (password: string) => boolean;
   logoutAdmin: () => void;
   addProduct: (product: Omit<Product, "id">) => Promise<void>;
+  updateProduct: (productId: number, data: Partial<Omit<Product, "id">>) => Promise<void>;
   removeProduct: (productId: number) => Promise<void>;
   updateProductPrice: (productId: number, newPrice: number) => Promise<void>;
   recordTransaction: (userId: number, productId: number) => Promise<void>;
@@ -133,9 +136,33 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
       });
       const newUser = await response.json();
       setUsers([...users, newUser]);
-      setCurrentUser(newUser);
     } catch (error) {
       console.error("Error creating user:", error);
+    }
+  };
+
+  const updateUser = async (userId: number, name: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const updatedUser = await response.json();
+      setUsers(users.map((u) => (u.id === userId ? updatedUser : u)));
+    } catch (error) {
+      console.error("Error updating user:", error);
+    }
+  };
+
+  const deleteUser = async (userId: number) => {
+    try {
+      await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+      });
+      setUsers(users.filter((u) => u.id !== userId));
+    } catch (error) {
+      console.error("Error deleting user:", error);
     }
   };
 
@@ -165,6 +192,20 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
       setProducts([...products, newProduct]);
     } catch (error) {
       console.error("Error adding product:", error);
+    }
+  };
+
+  const updateProduct = async (productId: number, data: Partial<Omit<Product, "id">>) => {
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const updatedProduct = await response.json();
+      setProducts(products.map((p) => (p.id === productId ? updatedProduct : p)));
+    } catch (error) {
+      console.error("Error updating product:", error);
     }
   };
 
@@ -274,10 +315,13 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
         loading,
         loginUser,
         createUser,
+        updateUser,
+        deleteUser,
         logoutUser,
         loginAdmin,
         logoutAdmin,
         addProduct,
+        updateProduct,
         removeProduct,
         updateProductPrice,
         recordTransaction,

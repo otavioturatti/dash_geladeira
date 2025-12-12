@@ -6,12 +6,18 @@ import { LogOut, LayoutDashboard, User as UserIcon } from "lucide-react";
 import background from "@assets/generated_images/abstract_dark_industrial_tech_background_with_neon_accents.png";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { currentUser, isAdmin, logoutUser, logoutAdmin } = useBeverage();
 
   const handleLogout = () => {
-    if (isAdmin) logoutAdmin();
-    if (currentUser) logoutUser();
+    if (isAdmin) {
+      logoutAdmin();
+      setLocation("/admin");
+    }
+    if (currentUser) {
+      logoutUser();
+      setLocation("/");
+    }
   };
 
   return (

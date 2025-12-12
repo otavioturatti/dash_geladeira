@@ -11,21 +11,27 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
   PieChart, Pie, LineChart, Line
 } from "recharts";
-import { AlertTriangle, Trash2, Plus, DollarSign, Users, Package, CheckCircle, Coffee, Zap, Droplets, Wine, Beer, Milk, UserPlus, Calendar } from "lucide-react";
+import { AlertTriangle, Trash2, Plus, DollarSign, Users, Package, CheckCircle, Coffee, Zap, Droplets, Wine, Beer, Milk, UserPlus, Calendar, Pencil, X, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
+type ProductType = "monster" | "coke" | "other";
 
 export default function AdminDashboard() {
   const {
     products, transactions, users,
-    addProduct, removeProduct, updateProductPrice, resetMonth,
-    getUserBalance, clearUserTransactions, createUser,
+    addProduct, removeProduct, updateProduct, updateProductPrice, resetMonth,
+    getUserBalance, clearUserTransactions, createUser, updateUser, deleteUser,
     purchaseHistory, availableMonths, getPurchaseHistoryByMonth
   } = useBeverage();
 
   const [newProduct, setNewProduct] = useState({ name: "", price: "", type: "other" as const, icon: "Coffee", borderColor: "#22c55e" });
   const [newUserName, setNewUserName] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [editingProduct, setEditingProduct] = useState<number | null>(null);
+  const [editProductData, setEditProductData] = useState<{ name: string; type: ProductType; icon: string; borderColor: string }>({ name: "", type: "other", icon: "Coffee", borderColor: "#22c55e" });
+  const [editingUser, setEditingUser] = useState<number | null>(null);
+  const [editUserName, setEditUserName] = useState("");
 
   const availableIcons = [
     { value: "Coffee", label: "Café", icon: Coffee },
@@ -98,6 +104,43 @@ export default function AdminDashboard() {
     }
   };
 
+  const startEditProduct = (product: typeof products[0]) => {
+    setEditingProduct(product.id);
+    setEditProductData({
+      name: product.name,
+      type: product.type,
+      icon: product.icon || "Coffee",
+      borderColor: product.borderColor || "#22c55e"
+    });
+  };
+
+  const saveEditProduct = () => {
+    if (editingProduct && editProductData.name.trim()) {
+      updateProduct(editingProduct, editProductData);
+      setEditingProduct(null);
+    }
+  };
+
+  const cancelEditProduct = () => {
+    setEditingProduct(null);
+  };
+
+  const startEditUser = (user: typeof users[0]) => {
+    setEditingUser(user.id);
+    setEditUserName(user.name);
+  };
+
+  const saveEditUser = () => {
+    if (editingUser && editUserName.trim()) {
+      updateUser(editingUser, editUserName.trim());
+      setEditingUser(null);
+    }
+  };
+
+  const cancelEditUser = () => {
+    setEditingUser(null);
+  };
+
   const formatMonthLabel = (month: string) => {
     const [year, monthNum] = month.split("-");
     const date = new Date(parseInt(year), parseInt(monthNum) - 1);
@@ -105,7 +148,7 @@ export default function AdminDashboard() {
   };
 
   const filteredHistory = useMemo(() => {
-    if (!selectedMonth) return purchaseHistory;
+    if (selectedMonth === "all") return purchaseHistory;
     return getPurchaseHistoryByMonth(selectedMonth);
   }, [selectedMonth, purchaseHistory, getPurchaseHistoryByMonth]);
 
@@ -278,32 +321,122 @@ export default function AdminDashboard() {
                 <div className="space-y-4">
                   {products.map(product => (
                     <div key={product.id} className="flex items-center justify-between p-4 border rounded-lg bg-card/50">
-                      <div className="flex-1">
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-xs text-muted-foreground capitalize">{product.type}</div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <Label htmlFor={`price-${product.id}`} className="sr-only">Preço</Label>
-                          <span className="text-muted-foreground">R$</span>
-                          <Input 
-                            id={`price-${product.id}`}
-                            type="number" 
-                            className="w-24 h-8 text-right font-mono"
-                            value={product.price}
-                            onChange={(e) => updateProductPrice(product.id, parseFloat(e.target.value))}
-                            step="0.50"
-                          />
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-muted-foreground hover:text-destructive"
-                          onClick={() => removeProduct(product.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      {editingProduct === product.id ? (
+                        <>
+                          <div className="flex-1 flex flex-wrap gap-3 items-center">
+                            <Input
+                              value={editProductData.name}
+                              onChange={(e) => setEditProductData({...editProductData, name: e.target.value})}
+                              className="w-40 h-8"
+                              placeholder="Nome"
+                            />
+                            <Select
+                              value={editProductData.type}
+                              onValueChange={(val: ProductType) => setEditProductData({...editProductData, type: val})}
+                            >
+                              <SelectTrigger className="w-32 h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="monster">Monster</SelectItem>
+                                <SelectItem value="coke">Coca</SelectItem>
+                                <SelectItem value="other">Outro</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={editProductData.icon}
+                              onValueChange={(val) => setEditProductData({...editProductData, icon: val})}
+                            >
+                              <SelectTrigger className="w-36 h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableIcons.map((iconOption) => (
+                                  <SelectItem key={iconOption.value} value={iconOption.value}>
+                                    <div className="flex items-center gap-2">
+                                      <iconOption.icon className="w-4 h-4" />
+                                      <span>{iconOption.label}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <input
+                              type="color"
+                              value={editProductData.borderColor}
+                              onChange={(e) => setEditProductData({...editProductData, borderColor: e.target.value})}
+                              className="w-10 h-8 rounded cursor-pointer border border-border"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button size="icon" variant="ghost" className="text-green-500 hover:text-green-600" onClick={saveEditProduct}>
+                              <Check className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={cancelEditProduct}>
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex-1 flex items-center gap-3">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: product.borderColor || '#6b7280' }}
+                            />
+                            <div>
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-xs text-muted-foreground capitalize">{product.type}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <Label htmlFor={`price-${product.id}`} className="sr-only">Preço</Label>
+                              <span className="text-muted-foreground">R$</span>
+                              <Input
+                                id={`price-${product.id}`}
+                                type="number"
+                                className="w-24 h-8 text-right font-mono"
+                                value={product.price}
+                                onChange={(e) => updateProductPrice(product.id, parseFloat(e.target.value))}
+                                step="0.50"
+                              />
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-muted-foreground hover:text-primary"
+                              onClick={() => startEditProduct(product)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground hover:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir Produto</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja excluir <strong>{product.name}</strong>?
+                                    Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => removeProduct(product.id)}>Excluir</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -395,11 +528,66 @@ export default function AdminDashboard() {
               {users.length > 0 && (
                 <div className="mt-6 border-t pt-4">
                   <h4 className="text-sm font-medium mb-3">Membros cadastrados ({users.length})</h4>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="space-y-2">
                     {users.map(user => (
-                      <span key={user.id} className="px-3 py-1 bg-muted rounded-full text-sm">
-                        {user.name}
-                      </span>
+                      <div key={user.id} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                        {editingUser === user.id ? (
+                          <>
+                            <Input
+                              value={editUserName}
+                              onChange={(e) => setEditUserName(e.target.value)}
+                              className="flex-1 h-8 mr-2"
+                              placeholder="Nome do membro"
+                            />
+                            <div className="flex items-center gap-1">
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500 hover:text-green-600" onClick={saveEditUser}>
+                                <Check className="w-4 h-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={cancelEditUser}>
+                                <X className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-sm">{user.name}</span>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                onClick={() => startEditUser(user)}
+                              >
+                                <Pencil className="w-3 h-3" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir Membro</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja excluir <strong>{user.name}</strong>?
+                                      Todas as transações deste usuário serão mantidas no histórico.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deleteUser(user.id)}>Excluir</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -473,7 +661,7 @@ export default function AdminDashboard() {
                     <SelectValue placeholder="Todos os meses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os meses</SelectItem>
+                    <SelectItem value="all">Todos os meses</SelectItem>
                     {availableMonths.map(month => (
                       <SelectItem key={month} value={month}>
                         {formatMonthLabel(month)}
