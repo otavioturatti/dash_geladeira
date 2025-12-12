@@ -4,7 +4,11 @@
       "Bash(dir /s /B \"c:\\Users\\dumdu\\OneDrive\\Área de Trabalho\\recria_core-main\\shared\")",
       "Bash(find:*)",
       "Bash(git remote add:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)"
     ]
   }
 }

@@ -12,8 +12,8 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-ARG DATABASE_URL
-RUN npm run build && DATABASE_URL=${DATABASE_URL} npm run db:push
+# Build only (no db:push during build)
+RUN npm run build
 
 
 # Production stage
@@ -27,7 +27,7 @@ ENV NODE_ENV=production
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
