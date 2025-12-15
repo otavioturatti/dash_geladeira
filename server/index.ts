@@ -71,8 +71,18 @@ app.use((req, res, next) => {
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL
+        name TEXT NOT NULL,
+        pin TEXT NOT NULL DEFAULT '0000',
+        must_reset_pin TEXT NOT NULL DEFAULT 'true'
       )
+    `);
+
+    // Adicionar colunas de PIN se não existirem
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS pin TEXT NOT NULL DEFAULT '0000'
+    `);
+    await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS must_reset_pin TEXT NOT NULL DEFAULT 'true'
     `);
     
     // Criar tabela products

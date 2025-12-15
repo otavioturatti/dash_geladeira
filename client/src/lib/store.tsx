@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 export type User = {
   id: number;
   name: string;
+  pin?: string;
+  mustResetPin?: string;
 };
 
 export type Product = {
@@ -43,6 +45,8 @@ interface BeverageContextType {
   isAdmin: boolean;
   loading: boolean;
   loginUser: (userId: number) => void;
+  loginUserWithPin: (pin: string) => Promise<{ success: boolean; user?: User; mustResetPin?: boolean; message?: string }>;
+  resetUserPin: (userId: number, newPin: string) => Promise<void>;
   createUser: (name: string) => Promise<void>;
   updateUser: (userId: number, name: string) => Promise<void>;
   deleteUser: (userId: number) => Promise<void>;
@@ -169,6 +173,55 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
   const logoutUser = () => {
     setCurrentUser(null);
     localStorage.removeItem("recria_current_user_id");
+  };
+
+  const loginUserWithPin = async (pin: string) => {
+    try {
+      const response = await fetch("/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      });
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        setCurrentUser(data.user);
+        localStorage.setItem("recria_current_user_id", data.user.id.toString());
+        return {
+          success: true,
+          user: data.user,
+          mustResetPin: data.mustResetPin
+        };
+      }
+      return { success: false, message: data.message };
+    } catch (error) {
+      console.error("Error logging in with PIN:", error);
+      return { success: false, message: "Erro ao fazer login" };
+    }
+  };
+
+  const resetUserPin = async (userId: number, newPin: string) => {
+    try {
+      const response = await fetch(`/api/users/${userId}/reset-pin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPin }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const updatedUser = await response.json();
+      setUsers(users.map(u => u.id === userId ? updatedUser : u));
+      if (currentUser?.id === userId) {
+        setCurrentUser(updatedUser);
+      }
+    } catch (error) {
+      console.error("Error resetting PIN:", error);
+      throw error;
+    }
   };
 
   const loginAdmin = async (password: string) => {
@@ -326,6 +379,8 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
         isAdmin,
         loading,
         loginUser,
+        loginUserWithPin,
+        resetUserPin,
         createUser,
         updateUser,
         deleteUser,

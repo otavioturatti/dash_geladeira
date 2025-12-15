@@ -163,6 +163,46 @@ export async function registerRoutes(
     }
   });
 
+  // User PIN authentication
+  app.post("/api/users/login", async (req, res) => {
+    const { pin } = req.body;
+
+    if (!pin || pin.length !== 4) {
+      return res.status(400).json({ success: false, message: "PIN deve ter 4 dígitos" });
+    }
+
+    const user = await storage.authenticateUserByPin(pin);
+
+    if (user) {
+      res.json({
+        success: true,
+        user,
+        mustResetPin: user.mustResetPin === "true"
+      });
+    } else {
+      res.status(401).json({ success: false, message: "PIN inválido" });
+    }
+  });
+
+  // Reset user PIN
+  app.post("/api/users/:id/reset-pin", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const { newPin } = req.body;
+
+    if (!newPin || newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+      return res.status(400).json({ message: "PIN deve ter exatamente 4 dígitos numéricos" });
+    }
+
+    if (newPin === "0000") {
+      return res.status(400).json({ message: "PIN não pode ser 0000" });
+    }
+
+    const user = await storage.updateUserPin(id, newPin);
+    await storage.setUserMustResetPin(id, false);
+
+    res.json(user);
+  });
+
   // Purchase History (histórico permanente)
   app.get("/api/history", async (_req, res) => {
     const history = await storage.getPurchaseHistory();

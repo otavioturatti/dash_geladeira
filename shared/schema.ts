@@ -5,6 +5,8 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  pin: text("pin").notNull().default("0000"),
+  mustResetPin: text("must_reset_pin").notNull().default("true"),
 });
 
 export const products = pgTable("products", {

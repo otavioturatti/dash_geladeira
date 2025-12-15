@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRoute, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useBeverage } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,11 +20,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function UserDashboard() {
-  const [, params] = useRoute("/dashboard/:userId");
   const [, setLocation] = useLocation();
-  const { users, products, recordTransaction, getUserBalance, getUserHistory, loginUser, logoutUser, getUserPurchaseHistory, availableMonths } = useBeverage();
-  const userId = params?.userId ? parseInt(params.userId) : undefined;
-  const user = users.find((u) => u.id === userId);
+  const { currentUser, products, recordTransaction, getUserBalance, getUserHistory, logoutUser, getUserPurchaseHistory, availableMonths } = useBeverage();
   const [showConfetti, setShowConfetti] = useState<string | null>(null);
   const [confirmProduct, setConfirmProduct] = useState<{id: number, name: string} | null>(null);
 
@@ -33,12 +30,14 @@ export default function UserDashboard() {
     setLocation("/");
   };
 
-  // Restore session if needed (simple check)
+  // Redirect to login if no user is logged in
   useEffect(() => {
-    if (userId !== undefined) loginUser(userId);
-  }, [userId, loginUser]);
+    if (!currentUser) {
+      setLocation("/");
+    }
+  }, [currentUser, setLocation]);
 
-  if (!user) return <div className="p-8 text-center">Usuário não encontrado.</div>;
+  if (!currentUser) return null;
 
   if (products.length === 0) {
     return (
@@ -50,9 +49,9 @@ export default function UserDashboard() {
   }
 
   const handleConfirmPurchase = async () => {
-    if (userId === undefined || !confirmProduct) return;
-    
-    await recordTransaction(userId, confirmProduct.id);
+    if (!currentUser || !confirmProduct) return;
+
+    await recordTransaction(currentUser.id, confirmProduct.id);
     setShowConfetti(confirmProduct.name);
     setConfirmProduct(null);
     setTimeout(() => setShowConfetti(null), 3000);
@@ -62,9 +61,9 @@ export default function UserDashboard() {
     setConfirmProduct({ id, name });
   };
 
-  const balance = getUserBalance(user.id);
-  const history = getUserHistory(user.id);
-  const fullHistory = getUserPurchaseHistory(user.id);
+  const balance = getUserBalance(currentUser.id);
+  const history = getUserHistory(currentUser.id);
+  const fullHistory = getUserPurchaseHistory(currentUser.id);
 
   const monsterProduct = products.find(p => p.type === "monster") || products[0];
   const cokeProduct = products.find(p => p.type === "coke") || products[1] || products[0];
@@ -84,7 +83,7 @@ export default function UserDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-display font-bold">Olá, <span className="text-primary">{user.name}</span></h1>
+            <h1 className="text-3xl font-display font-bold">Olá, <span className="text-primary">{currentUser.name}</span></h1>
             <Button variant="ghost" size="sm" onClick={handleChangeUser} className="text-muted-foreground hover:text-foreground">
               <LogOut className="w-4 h-4 mr-1" />
               Trocar

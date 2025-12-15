@@ -15,6 +15,9 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, name: string): Promise<User | undefined>;
   deleteUser(id: number): Promise<void>;
+  authenticateUserByPin(pin: string): Promise<User | null>;
+  updateUserPin(id: number, pin: string): Promise<User | undefined>;
+  setUserMustResetPin(id: number, mustReset: boolean): Promise<User | undefined>;
 
   // Products
   getProducts(): Promise<Product[]>;
@@ -66,6 +69,29 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  async authenticateUserByPin(pin: string): Promise<User | null> {
+    const result = await db.select().from(users).where(eq(users.pin, pin));
+    return result[0] || null;
+  }
+
+  async updateUserPin(id: number, pin: string): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ pin })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async setUserMustResetPin(id: number, mustReset: boolean): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ mustResetPin: mustReset ? "true" : "false" })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
   }
 
   // Products
