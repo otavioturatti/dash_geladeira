@@ -1,21 +1,30 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { useBeverage } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KeyRound } from "lucide-react";
+import { KeyRound, ArrowLeft } from "lucide-react";
 
 export default function PinLogin() {
+  const [, params] = useRoute("/login/:userId");
   const [, setLocation] = useLocation();
-  const { loginUserWithPin } = useBeverage();
+  const { users, loginUserWithPin } = useBeverage();
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const userId = params?.userId ? parseInt(params.userId) : null;
+  const user = users.find(u => u.id === userId);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!userId || !user) {
+      setError("Usuário inválido");
+      return;
+    }
 
     if (pin.length !== 4) {
       setError("PIN deve ter 4 dígitos");
@@ -30,6 +39,13 @@ export default function PinLogin() {
     setLoading(false);
 
     if (result.success && result.user) {
+      // Verificar se o usuário logado é o mesmo selecionado
+      if (result.user.id !== userId) {
+        setError("PIN incorreto para este usuário");
+        setPin("");
+        return;
+      }
+
       if (result.mustResetPin) {
         setLocation(`/reset-pin/${result.user.id}`);
       } else {
@@ -41,6 +57,27 @@ export default function PinLogin() {
     }
   };
 
+  const handleBack = () => {
+    setLocation("/");
+  };
+
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Card className="w-full max-w-md bg-card/50 backdrop-blur-sm border-primary/20">
+          <CardHeader className="text-center">
+            <CardTitle>Usuário não encontrado</CardTitle>
+            <CardDescription>
+              <Button variant="link" onClick={() => setLocation("/")}>
+                Voltar para seleção
+              </Button>
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   const handlePinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 4);
     setPin(value);
@@ -51,10 +88,19 @@ export default function PinLogin() {
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
       <Card className="w-full max-w-md bg-card/50 backdrop-blur-sm border-primary/20">
         <CardHeader className="text-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBack}
+            className="absolute left-4 top-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
             <KeyRound className="w-6 h-6" />
           </div>
-          <CardTitle>Entrar com PIN</CardTitle>
+          <CardTitle>Olá, {user.name}!</CardTitle>
           <CardDescription>Digite seu PIN de 4 dígitos para acessar</CardDescription>
         </CardHeader>
         <CardContent>
@@ -77,11 +123,6 @@ export default function PinLogin() {
             <Button type="submit" className="w-full" disabled={loading || pin.length !== 4}>
               {loading ? "Entrando..." : "Entrar"}
             </Button>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground mt-4">
-                Primeiro acesso? Seu PIN inicial é <span className="font-mono">0000</span>
-              </p>
-            </div>
           </form>
         </CardContent>
       </Card>

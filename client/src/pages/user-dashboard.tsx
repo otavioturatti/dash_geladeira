@@ -4,7 +4,7 @@ import { useBeverage } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Droplets, History, CheckCircle2, AlertCircle, Coffee, Wine, Beer, Milk, LucideIcon, LogOut, Calendar } from "lucide-react";
+import { Zap, Droplets, History, CheckCircle2, AlertCircle, Coffee, Wine, Beer, Milk, LucideIcon, LogOut, Calendar, KeyRound } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -28,6 +28,10 @@ export default function UserDashboard() {
   const handleChangeUser = () => {
     logoutUser();
     setLocation("/");
+  };
+
+  const handleResetPin = () => {
+    setLocation(`/reset-pin/${currentUser.id}`);
   };
 
   // Redirect to login if no user is logged in
@@ -89,7 +93,13 @@ export default function UserDashboard() {
               Trocar
             </Button>
           </div>
-          <p className="text-muted-foreground">O que vamos beber hoje?</p>
+          <div className="flex items-center gap-2">
+            <p className="text-muted-foreground">O que vamos beber hoje?</p>
+            <Button variant="ghost" size="sm" onClick={handleResetPin} className="text-xs text-muted-foreground hover:text-foreground">
+              <KeyRound className="w-3 h-3 mr-1" />
+              Alterar PIN
+            </Button>
+          </div>
         </div>
         <Card className="bg-card/40 border-primary/20 backdrop-blur-md w-full md:w-auto min-w-[200px]">
           <CardContent className="p-4 flex flex-col items-center md:items-end">
