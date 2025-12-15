@@ -15,9 +15,10 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, name: string): Promise<User | undefined>;
   deleteUser(id: number): Promise<void>;
-  authenticateUserByPin(pin: string): Promise<User | null>;
+  authenticateUserByPin(userId: number, pin: string): Promise<User | null>;
   updateUserPin(id: number, pin: string): Promise<User | undefined>;
   setUserMustResetPin(id: number, mustReset: boolean): Promise<User | undefined>;
+  isPinInUse(pin: string, excludeUserId?: number): Promise<boolean>;
 
   // Products
   getProducts(): Promise<Product[]>;
@@ -71,9 +72,17 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.id, id));
   }
 
-  async authenticateUserByPin(pin: string): Promise<User | null> {
-    const result = await db.select().from(users).where(eq(users.pin, pin));
-    return result[0] || null;
+  async authenticateUserByPin(userId: number, pin: string): Promise<User | null> {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
+    const user = result[0];
+    if (user && user.pin === pin) {
+      return user;
+    }
+    return null;
   }
 
   async updateUserPin(id: number, pin: string): Promise<User | undefined> {
@@ -92,6 +101,23 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return result[0];
+  }
+
+  async isPinInUse(pin: string, excludeUserId?: number): Promise<boolean> {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.pin, pin));
+
+    // Se encontrou usuários com esse PIN
+    if (result.length === 0) return false;
+
+    // Se deve excluir um usuário específico (caso de atualização)
+    if (excludeUserId !== undefined) {
+      return result.some((user: User) => user.id !== excludeUserId);
+    }
+
+    return true;
   }
 
   // Products

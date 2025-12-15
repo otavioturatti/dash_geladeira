@@ -165,13 +165,17 @@ export async function registerRoutes(
 
   // User PIN authentication
   app.post("/api/users/login", async (req, res) => {
-    const { pin } = req.body;
+    const { userId, pin } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: "Usuário não especificado" });
+    }
 
     if (!pin || pin.length !== 4) {
       return res.status(400).json({ success: false, message: "PIN deve ter 4 dígitos" });
     }
 
-    const user = await storage.authenticateUserByPin(pin);
+    const user = await storage.authenticateUserByPin(userId, pin);
 
     if (user) {
       res.json({
@@ -180,7 +184,7 @@ export async function registerRoutes(
         mustResetPin: user.mustResetPin === "true"
       });
     } else {
-      res.status(401).json({ success: false, message: "PIN inválido" });
+      res.status(401).json({ success: false, message: "PIN incorreto" });
     }
   });
 
@@ -195,6 +199,12 @@ export async function registerRoutes(
 
     if (newPin === "0000") {
       return res.status(400).json({ message: "PIN não pode ser 0000" });
+    }
+
+    // Verificar se o PIN já está em uso por outro usuário
+    const pinInUse = await storage.isPinInUse(newPin, id);
+    if (pinInUse) {
+      return res.status(400).json({ message: "Este PIN já está em uso por outro usuário. Escolha outro PIN." });
     }
 
     const user = await storage.updateUserPin(id, newPin);

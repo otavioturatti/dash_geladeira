@@ -45,7 +45,7 @@ interface BeverageContextType {
   isAdmin: boolean;
   loading: boolean;
   loginUser: (userId: number) => void;
-  loginUserWithPin: (pin: string) => Promise<{ success: boolean; user?: User; mustResetPin?: boolean; message?: string }>;
+  loginUserWithPin: (userId: number, pin: string) => Promise<{ success: boolean; user?: User; mustResetPin?: boolean; message?: string }>;
   resetUserPin: (userId: number, newPin: string) => Promise<void>;
   createUser: (name: string) => Promise<void>;
   updateUser: (userId: number, name: string) => Promise<void>;
@@ -175,12 +175,12 @@ export function BeverageProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("recria_current_user_id");
   };
 
-  const loginUserWithPin = async (pin: string) => {
+  const loginUserWithPin = async (userId: number, pin: string) => {
     try {
       const response = await fetch("/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin }),
+        body: JSON.stringify({ userId, pin }),
       });
       const data = await response.json();
 

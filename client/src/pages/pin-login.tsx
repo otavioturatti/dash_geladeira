@@ -34,25 +34,18 @@ export default function PinLogin() {
     setLoading(true);
     setError("");
 
-    const result = await loginUserWithPin(pin);
+    const result = await loginUserWithPin(userId, pin);
 
     setLoading(false);
 
     if (result.success && result.user) {
-      // Verificar se o usuário logado é o mesmo selecionado
-      if (result.user.id !== userId) {
-        setError("PIN incorreto para este usuário");
-        setPin("");
-        return;
-      }
-
       if (result.mustResetPin) {
         setLocation(`/reset-pin/${result.user.id}`);
       } else {
         setLocation("/dashboard");
       }
     } else {
-      setError(result.message || "PIN inválido");
+      setError(result.message || "PIN incorreto");
       setPin("");
     }
   };
